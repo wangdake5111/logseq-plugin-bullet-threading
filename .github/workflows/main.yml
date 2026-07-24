@@ -5,6 +5,10 @@ name: Releases
 env:
   PLUGIN_NAME: logseq-plugin-bullet-threading
 
+permissions:
+  contents: write
+  issues: write
+
 # Controls when the action will run.
 on:
   push:
