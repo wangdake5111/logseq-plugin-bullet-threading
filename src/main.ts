@@ -1,126 +1,83 @@
 import "@logseq/libs";
+import semver from "semver";
+
 import { logseq as PL } from "../package.json";
-import semver from 'semver';
+import bundledBaseStyles from "./styles/bullet-threading.css?raw";
+import compatibilityStyles from "./styles/compatibility.css?raw";
 
-const KEY = "logseq-bullet-threading";
+const MINIMUM_COMPATIBILITY_VERSION = "0.9.6";
 
-interface SavedData {
-  version: string;
-  css: string;
+function provideBaseStyles(): void {
+  logseq.provideStyle({
+    key: `${PL.id}-base`,
+    style: bundledBaseStyles,
+  });
 }
 
-const getPersisted = (): SavedData | null => {
-  return JSON.parse(localStorage.getItem(KEY) ?? "null");
-};
+function provideCompatibilityStyles(): void {
+  logseq.provideStyle({
+    key: `${PL.id}-compatibility`,
+    style: compatibilityStyles,
+  });
+}
 
-const persisted = getPersisted();
+function onSettingsChange(): void {
+  const configuredWidth = logseq.settings?.width ?? "2px";
+  const width = `${configuredWidth}`.endsWith("px")
+    ? `${configuredWidth}`
+    : `${configuredWidth}px`;
+  const color =
+    logseq.settings?.customColor && typeof logseq.settings?.color === "string"
+      ? logseq.settings.color
+      : null;
 
-const persist = (data: SavedData) => {
-  localStorage.setItem(KEY, JSON.stringify(data));
-};
-
-const getLatestVersion = async () => {
-  const meta = await fetch(
-    "https://api.github.com/repos/pengx17/logseq-dev-theme/releases?per_page=1"
-  ).then((res) => res.json());
-
-  return meta[0].name as string; // eg., "v1.23.1"
-};
-
-// const cachedVersion = persisted?.version ?? "latest";
-
-const getCSSFromCDN = (v: string) => {
-  return fetch(
-    `https://cdn.jsdelivr.net/gh/pengx17/logseq-dev-theme@${v}/bullet_threading.css`
-  ).then((res) => res.text());
-};
-
-function onSettingsChange() {
-  let width = logseq.settings?.width ?? 2;
-  const color = logseq.settings?.customColor && logseq.settings?.color;
-  if (!("" + width).endsWith("px")) {
-    width = width + "px";
-  }
-
-  const vars: [string, string][] = [
+  const variables: [string, string][] = [
     ["--ls-block-bullet-threading-width-overwrite", width],
   ];
 
   if (color) {
-    vars.push(["--ls-block-bullet-threading-active-color-overwrite", color]);
+    variables.push([
+      "--ls-block-bullet-threading-active-color-overwrite",
+      color,
+    ]);
   }
 
-  const varsString = vars.map((pair) => pair.join(": ") + ";").join("\n");
+  const declarations = variables
+    .map(([name, value]) => `${name}: ${value};`)
+    .join("\n");
 
   logseq.provideStyle({
-    key: PL.id + "-vars",
-    style: `:root { ${varsString} }`,
+    key: `${PL.id}-variables`,
+    style: `:root { ${declarations} }`,
   });
 }
 
-async function main() {
+async function shouldUseCompatibilityStyles(): Promise<boolean> {
+  try {
+    const appVersion = await logseq.App.getInfo("version");
+    return Boolean(
+      appVersion &&
+        semver.valid(appVersion) &&
+        semver.gt(appVersion, MINIMUM_COMPATIBILITY_VERSION),
+    );
+  } catch (error) {
+    console.warn(
+      "logseq-bullet-threading: could not read the Logseq version",
+      error,
+    );
+    return false;
+  }
+}
+
+async function main(): Promise<void> {
   onSettingsChange();
   logseq.onSettingsChanged(onSettingsChange);
 
-  // use cached first
-  if (persisted) {
-    logseq.provideStyle({
-      key: PL.id,
-      style: persisted.css,
-    });
-  }
-  const latestVersion = await getLatestVersion();
-  if (latestVersion !== persisted?.version) {
-    console.log(
-      "logseq-bullet-threading: updating to latest version " + latestVersion
-    );
-    // fetch from jsDelivr CDN
-    const css = await getCSSFromCDN(latestVersion);
-    logseq.provideStyle({
-      key: PL.id + "-styles",
-      style: css,
-    });
-    persist({
-      css,
-      version: latestVersion,
-    });
-  }
+  // The bundled base is release-pinned so runtime CSS matches tested CSS.
+  provideBaseStyles();
 
-  // patches
-  const appVersion = await logseq.App.getInfo('version')
-  if (
-    appVersion && semver.valid(appVersion) &&
-    semver.gt(appVersion, '0.9.6')) {
-    logseq.provideStyle(`
-      .bullet-container .bullet {
-        font-size: 1rem;
-      }
-      .ls-block[haschild] > div > .block-content-wrapper::before {
-        left: -13px;
-      }
-      
-      .ls-block .ls-block > div > div.block-control-wrap::before {
-        right: 16px;
-      }
-      
-      .bullet-container.as-order-list {
-        width: 22px !important;
-      }
-      
-      .ls-block.is-order-list[haschild] > div > .block-content-wrapper::before {
-        left: -15px;
-        top: 24px;
-      }
-      
-      .ls-block .block-children > .ls-block.is-order-list::before {
-        top: -0.2rem;
-      }
-      
-      .ls-block .ls-block.is-order-list > div > div.block-control-wrap::before {
-        right: 22px;
-        top: calc(-50% + 0.5rem);
-      }
-    `)
+  if (await shouldUseCompatibilityStyles()) {
+    provideCompatibilityStyles();
   }
 }
 

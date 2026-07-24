@@ -5,8 +5,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preinstall": "npx only-allow pnpm"
+    "lint": "eslint src tests --ext .ts,.mjs",
+    "test": "node tests/db-threading-regression.mjs",
+    "test:dist": "node tests/dist-style-smoke.mjs",
+    "verify": "pnpm lint && pnpm test && pnpm build && pnpm test:dist"
   },
+  "packageManager": "pnpm@9.15.9",
   "license": "MIT",
   "dependencies": {
     "@logseq/libs": "^0.0.15",

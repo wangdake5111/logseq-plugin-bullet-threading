@@ -1,0 +1,229 @@
+/*
+ * Compatibility overrides for modern Logseq and Logseq DB.
+ *
+ * Logseq DB adds wrapper elements around block content and children. The
+ * original direct-child selectors therefore miss parent stems and sibling
+ * segments. Keep this stylesheet after the upstream baseline.
+ */
+
+.bullet-container .bullet {
+  font-size: 1rem;
+}
+
+/* Keep the bullet center on the DB threading axis at every line width. */
+.ls-block[haschild="true"]:not(.is-order-list):has(
+    > .block-children-container
+  )
+  > .block-main-container
+  > .block-control-wrap
+  > .bullet-link-wrap
+  > .bullet-container
+  > .bullet {
+  left: calc(var(--ls-block-bullet-threading-width) * -0.5);
+  position: relative;
+}
+
+/* Classic Logseq compatibility introduced after 0.9.6. */
+.ls-block[haschild] > div > .block-content-wrapper::before {
+  left: -13px;
+}
+
+/*
+ * DB parent stem. Anchor it to the stable main container instead of the
+ * deeply nested content wrapper, which is absent for plugin-rendered blocks.
+ * Requiring a rendered direct child container avoids phantom collapsed stems.
+ */
+.ls-block[haschild="true"]:not(.is-order-list):has(
+    > .block-children-container
+  )
+  > .block-main-container {
+  position: relative;
+}
+
+.ls-block[haschild="true"]:not(.is-order-list):has(
+    > .block-children-container
+  )
+  > .block-main-container::before {
+  pointer-events: none;
+  content: "";
+  top: calc(20px + var(--ls-block-bullet-threading-width) * 0.5);
+  bottom: -2px;
+  left: calc(31px - var(--ls-block-bullet-threading-width));
+  position: absolute;
+  border-left: var(--ls-block-bullet-threading-width) solid transparent;
+}
+
+/*
+ * A parent stem is active only while one of its direct outline children owns
+ * focus. Focusing the parent's own editor or a property block must not paint a
+ * dangling stem.
+ */
+.ls-block[haschild="true"]:not(.is-order-list):has(
+    > .block-children-container > .block-children:focus-within
+  )
+  > .block-main-container::before {
+  border-color: var(--ls-block-bullet-active-color);
+}
+
+/* DB wraps direct child blocks in blocks-list-wrap. */
+.ls-block
+  .block-children
+  > .blocks-list-wrap
+  > .ls-block::before {
+  pointer-events: none;
+  content: "";
+  top: -1rem;
+  bottom: 0;
+  border-left: var(--ls-block-bullet-threading-width) solid transparent;
+  left: calc(var(--ls-block-bullet-threading-width) * -1);
+  position: absolute;
+}
+
+/*
+ * The parent stem owns the path above the first direct child. Starting that
+ * child's segment at zero prevents it from entering the parent bullet.
+ */
+.ls-block[haschild="true"]:not(.is-order-list):has(
+    > .block-children-container
+  )
+  > .block-children-container
+  > .block-children
+  > .blocks-list-wrap
+  > .ls-block:first-child:not(.is-order-list)::before {
+  top: 0;
+}
+
+/*
+ * Match the first child's curve gap to the parent stem gap at every nesting
+ * level. For a 2px line this resolves to the verified -9px start.
+ */
+.ls-block[haschild="true"]:not(.is-order-list):has(
+    > .block-children-container
+  )
+  > .block-children-container
+  > .block-children
+  > .blocks-list-wrap
+  > .ls-block:first-child:not(.is-order-list)
+  > .block-main-container
+  > .block-control-wrap::before {
+  top: calc(
+    -50% + var(--ls-block-bullet-threading-width) * 0.5 + 3px
+  );
+}
+
+.ls-block
+  .block-children:focus-within
+  > .blocks-list-wrap
+  > .ls-block:not(:focus-within)::before {
+  border-color: var(--ls-block-bullet-active-color);
+}
+
+.ls-block
+  .block-children:focus-within
+  > .blocks-list-wrap
+  > .ls-block:focus-within
+  ~ .ls-block::before {
+  border-color: transparent;
+}
+
+.doc-mode
+  .ls-block[haschild="true"]:not(.is-order-list):has(
+    > .block-children-container
+  )
+  > .block-main-container::before {
+  display: none;
+}
+
+.ls-block .ls-block > div > div.block-control-wrap::before {
+  right: 16px;
+}
+
+.ls-block
+  .block-children
+  > .blocks-list-wrap
+  > .ls-block
+  > .block-main-container
+  > .block-control-wrap::before {
+  right: calc(15px + var(--ls-block-bullet-threading-width) * 0.5);
+}
+
+.bullet-container.as-order-list {
+  width: 22px !important;
+}
+
+.ls-block.is-order-list[haschild]
+  > div
+  > .block-content-wrapper::before {
+  left: -15px;
+  top: 24px;
+}
+
+.ls-block.is-order-list[haschild="true"]:has(
+    > .block-children-container
+  )
+  > .block-main-container
+  > .flex-col
+  > .flex-col
+  > .block-main-content
+  > .flex-col
+  > .block-content-or-editor-wrap
+  > .block-content-or-editor-inner
+  > .block-row
+  > .block-content-wrapper::before {
+  pointer-events: none;
+  content: "";
+  bottom: -4px;
+  left: -15px;
+  position: absolute;
+  top: 24px;
+  border-left: var(--ls-block-bullet-threading-width) solid transparent;
+}
+
+.ls-block.is-order-list[haschild="true"]:has(
+    > .block-children-container > .block-children:focus-within
+  )
+  > .block-main-container
+  > .flex-col
+  > .flex-col
+  > .block-main-content
+  > .flex-col
+  > .block-content-or-editor-wrap
+  > .block-content-or-editor-inner
+  > .block-row
+  > .block-content-wrapper::before {
+  border-color: var(--ls-block-bullet-active-color);
+}
+
+.doc-mode
+  .ls-block.is-order-list[haschild="true"]:has(
+    > .block-children-container
+  )
+  > .block-main-container
+  > .flex-col
+  > .flex-col
+  > .block-main-content
+  > .flex-col
+  > .block-content-or-editor-wrap
+  > .block-content-or-editor-inner
+  > .block-row
+  > .block-content-wrapper::before {
+  display: none;
+}
+
+.ls-block
+  .block-children
+  > .ls-block.is-order-list::before,
+.ls-block
+  .block-children
+  > .blocks-list-wrap
+  > .ls-block.is-order-list::before {
+  top: -0.2rem;
+}
+
+.ls-block
+  .ls-block.is-order-list
+  > div
+  > div.block-control-wrap::before {
+  right: 22px;
+  top: calc(-50% + 0.5rem);
+}
