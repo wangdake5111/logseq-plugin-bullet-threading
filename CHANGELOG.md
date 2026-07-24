@@ -1,3 +1,10 @@
+## [1.1.5](https://github.com/wangdake5111/logseq-plugin-bullet-threading/compare/v1.1.4...v1.1.5) (2026-07-24)
+
+
+### Bug Fixes
+
+* support bullet threading in Logseq DB ([430cc18](https://github.com/wangdake5111/logseq-plugin-bullet-threading/commit/430cc18c48daf885e02944db3b2bcf5140b4d777))
+
 ## [1.1.4](https://github.com/pengx17/logseq-plugin-bullet-threading/compare/v1.1.3...v1.1.4) (2023-05-27)
 
 
